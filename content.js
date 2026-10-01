@@ -504,6 +504,309 @@
     return ('#' + hex(m[1]) + hex(m[2]) + hex(m[3])).toLowerCase();
   }
 
+  // Display-only color normalization (UI fix, detection untouched).
+  // Never show raw lab()/oklab()/lch()/oklch()/hsl()/rgb() functions to the
+  // user — always display [swatch] #rrggbb. Detection, persistence and
+  // Copy CSS keep the original string; only the card value uses this.
+  function componentToHex(v) {
+    var n = Math.round(Math.max(0, Math.min(255, v)));
+    var h = n.toString(16);
+    return h.length === 1 ? '0' + h : h;
+  }
+
+  function rgbToHex(r, g, b) {
+    return ('#' + componentToHex(r) + componentToHex(g) + componentToHex(b)).toLowerCase();
+  }
+
+  function srgbGamma(c) {
+    c = Math.max(0, Math.min(1, c));
+    if (c <= 0.0031308) {
+      return 12.92 * c;
+    }
+    return 1.055 * Math.pow(c, 1 / 2.4) - 0.055;
+  }
+
+  function xyzToRgbHex(x, y, z) {
+    var r = srgbGamma(3.2406 * x - 1.5372 * y - 0.4986 * z);
+    var g = srgbGamma(-0.9689 * x + 1.8758 * y + 0.0415 * z);
+    var b = srgbGamma(0.0557 * x - 0.2040 * y + 1.0570 * z);
+    return rgbToHex(r * 255, g * 255, b * 255);
+  }
+
+  function labToRgbHex(L, a, b) {
+    var fy = (L + 16) / 116;
+    var fx = fy + a / 500;
+    var fz = fy - b / 200;
+    function finv(f) {
+      var f3 = f * f * f;
+      if (f3 > 0.008856) {
+        return f3;
+      }
+      return (f - 16 / 116) / 7.787;
+    }
+    var x = finv(fx) * 0.95047;
+    var y = finv(fy) * 1.0;
+    var z = finv(fz) * 1.08883;
+    return xyzToRgbHex(x, y, z);
+  }
+
+  function oklabToRgbHex(L, a, b) {
+    var l = L + 0.3963377774 * a + 0.2158037573 * b;
+    var m = L - 0.1055613458 * a - 0.0638541728 * b;
+    var s = L - 0.0894841775 * a - 1.2914855480 * b;
+    l = l * l * l;
+    m = m * m * m;
+    s = s * s * s;
+    var r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+    var g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+    var bl = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+    return rgbToHex(srgbGamma(r) * 255, srgbGamma(g) * 255, srgbGamma(bl) * 255);
+  }
+
+  function parseRgbComponent(part) {
+    part = String(part || '').trim();
+    if (!part) {
+      return null;
+    }
+    if (part.charAt(part.length - 1) === '%') {
+      var p = parseFloat(part.slice(0, -1));
+      if (isNaN(p)) {
+        return null;
+      }
+      return Math.max(0, Math.min(100, p)) / 100 * 255;
+    }
+    var n = parseFloat(part);
+    if (isNaN(n)) {
+      return null;
+    }
+    return Math.max(0, Math.min(255, n));
+  }
+
+  function manualRgbToHex(input) {
+    var m = String(input || '').match(/^rgba?\s*\((.+)\)\s*$/i);
+    if (!m) {
+      return null;
+    }
+    var body = m[1].replace(/\//g, ' ').replace(/,/g, ' ');
+    var parts = body.split(/\s+/).filter(function (p) { return p.length > 0; });
+    if (parts.length < 3) {
+      return null;
+    }
+    var r = parseRgbComponent(parts[0]);
+    var g = parseRgbComponent(parts[1]);
+    var b = parseRgbComponent(parts[2]);
+    if (r === null || g === null || b === null) {
+      return null;
+    }
+    return rgbToHex(r, g, b);
+  }
+
+  function hslToRgbNum(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    s = Math.max(0, Math.min(1, s));
+    l = Math.max(0, Math.min(1, l));
+    function hue2rgb(p, q, t) {
+      if (t < 0) { t += 1; }
+      if (t > 1) { t -= 1; }
+      if (t < 1 / 6) { return p + (q - p) * 6 * t; }
+      if (t < 1 / 2) { return q; }
+      if (t < 2 / 3) { return p + (q - p) * (2 / 3 - t) * 6; }
+      return p;
+    }
+    var r, g, b;
+    if (s === 0) {
+      r = g = b = l;
+    } else {
+      var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      var p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1 / 3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1 / 3);
+    }
+    return [r * 255, g * 255, b * 255];
+  }
+
+  function manualHslToHex(input) {
+    var m = String(input || '').match(/^hsla?\s*\((.+)\)\s*$/i);
+    if (!m) {
+      return null;
+    }
+    var body = m[1].replace(/\//g, ' ').replace(/,/g, ' ');
+    var parts = body.split(/\s+/).filter(function (p) { return p.length > 0; });
+    if (parts.length < 3) {
+      return null;
+    }
+    var h = parseFloat(parts[0]);
+    var s = parseFloat(parts[1]);
+    var l = parseFloat(parts[2]);
+    if (isNaN(h) || isNaN(s) || isNaN(l)) {
+      return null;
+    }
+    // s/l may carry % (standard) or be bare 0-1.
+    if (String(parts[1]).indexOf('%') !== -1) { s = s / 100; }
+    else if (s > 1) { s = s / 100; }
+    if (String(parts[2]).indexOf('%') !== -1) { l = l / 100; }
+    else if (l > 1) { l = l / 100; }
+    var rgb = hslToRgbNum(h, s, l);
+    return rgbToHex(rgb[0], rgb[1], rgb[2]);
+  }
+
+  function manualLabToHex(input) {
+    var m = String(input || '').match(/^lab\s*\((.+)\)\s*$/i);
+    if (!m) {
+      return null;
+    }
+    var body = m[1].replace(/\//g, ' ').replace(/,/g, ' ');
+    var parts = body.split(/\s+/).filter(function (p) { return p.length > 0; });
+    if (parts.length < 3) {
+      return null;
+    }
+    var L = parseFloat(parts[0]);
+    var a = parseFloat(parts[1]);
+    var b = parseFloat(parts[2]);
+    if (isNaN(L) || isNaN(a) || isNaN(b)) {
+      return null;
+    }
+    if (String(parts[0]).indexOf('%') !== -1) { L = L; }
+    L = Math.max(0, Math.min(100, L));
+    return labToRgbHex(L, a, b);
+  }
+
+  function manualOklabToHex(input) {
+    var m = String(input || '').match(/^oklab\s*\((.+)\)\s*$/i);
+    if (!m) {
+      return null;
+    }
+    var body = m[1].replace(/\//g, ' ').replace(/,/g, ' ');
+    var parts = body.split(/\s+/).filter(function (p) { return p.length > 0; });
+    if (parts.length < 3) {
+      return null;
+    }
+    var L = parseFloat(parts[0]);
+    var a = parseFloat(parts[1]);
+    var b = parseFloat(parts[2]);
+    if (isNaN(L) || isNaN(a) || isNaN(b)) {
+      return null;
+    }
+    if (String(parts[0]).indexOf('%') !== -1) { L = L / 100; }
+    L = Math.max(0, Math.min(1, L));
+    return oklabToRgbHex(L, a, b);
+  }
+
+  var __ffColorCanvas = null;
+
+  function canvasColorToHex(input) {
+    try {
+      if (typeof document === 'undefined') {
+        return null;
+      }
+      if (!__ffColorCanvas) {
+        __ffColorCanvas = document.createElement('canvas');
+        __ffColorCanvas.width = 1;
+        __ffColorCanvas.height = 1;
+      }
+      var ctx = null;
+      try {
+        ctx = __ffColorCanvas.getContext('2d', { willReadFrequently: true });
+      } catch (e0) {
+        try {
+          ctx = __ffColorCanvas.getContext('2d');
+        } catch (e1) {
+          return null;
+        }
+      }
+      if (!ctx) {
+        return null;
+      }
+      var SENTINEL = '#123456';
+      var trimmed = String(input).trim().toLowerCase();
+      try {
+        ctx.fillStyle = SENTINEL;
+      } catch (e) {
+        return null;
+      }
+      try {
+        ctx.fillStyle = input;
+      } catch (e) {
+        return null;
+      }
+      var serialized = '';
+      try {
+        serialized = String(ctx.fillStyle || '').toLowerCase().trim();
+      } catch (e) {
+        return null;
+      }
+      if (!serialized || (serialized === SENTINEL && trimmed !== SENTINEL)) {
+        return null;
+      }
+      var hm = serialized.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/);
+      if (hm) {
+        return '#' + hm[1];
+      }
+      var hm3 = serialized.match(/^#([0-9a-f]{3,4})$/);
+      if (hm3) {
+        var h = hm3[1];
+        return ('#' + h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2));
+      }
+      // Paint a pixel and read it back: handles lab()/oklab()/lch()/
+      // oklch()/color()/hsl()/named colors in browsers that render them.
+      try {
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = input;
+        ctx.fillRect(0, 0, 1, 1);
+        var d = ctx.getImageData(0, 0, 1, 1).data;
+        if (!d || d.length < 3) {
+          return null;
+        }
+        return rgbToHex(d[0], d[1], d[2]);
+      } catch (e) {
+        return null;
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function normalizeColorToHex(color) {
+    var input = String(color || '').trim();
+    if (!input) {
+      return '';
+    }
+    var hexMatch = input.match(/^#([0-9a-fA-F]{3,8})$/);
+    if (hexMatch) {
+      var h = hexMatch[1];
+      if (h.length === 3 || h.length === 4) {
+        return ('#' + h.charAt(0) + h.charAt(0) + h.charAt(1) + h.charAt(1) + h.charAt(2) + h.charAt(2)).toLowerCase();
+      }
+      return ('#' + h.slice(0, 6)).toLowerCase();
+    }
+    var viaCanvas = canvasColorToHex(input);
+    if (viaCanvas) {
+      return viaCanvas;
+    }
+    var viaRgb = manualRgbToHex(input);
+    if (viaRgb) {
+      return viaRgb;
+    }
+    var viaHsl = manualHslToHex(input);
+    if (viaHsl) {
+      return viaHsl;
+    }
+    var viaLab = manualLabToHex(input);
+    if (viaLab) {
+      return viaLab;
+    }
+    var viaOklab = manualOklabToHex(input);
+    if (viaOklab) {
+      return viaOklab;
+    }
+    var legacy = colorToHex(input);
+    if (legacy && legacy.charAt(0) === '#') {
+      return legacy;
+    }
+    return input;
+  }
+
   // Generates clean, readable CSS from the detected computed styles only.
   // Exactly the 8 typography properties — nothing unrelated. The color is
   // kept in its computed rgb()/rgba() form so the snippet round-trips.
@@ -1033,7 +1336,9 @@
 
     // Live preview in the detected typeface. fontFamily is the full
     // detected stack, so if the primary face isn't available the browser
-    // falls back gracefully down the stack automatically.
+    // falls back gracefully down the stack automatically. Preview is an
+    // independent fixed-height (90px) component: ONLY Aa + small font name,
+    // so preview size/family changes never move the rows below.
     var preview = document.createElement('div');
     preview.className = 'ff-preview';
     var aa = document.createElement('span');
@@ -1043,18 +1348,10 @@
     aa.style.fontStyle = info.fontStyle;
     aa.style.letterSpacing = info.letterSpacing;
     aa.textContent = 'Aa';
-    var pangram = document.createElement('span');
-    pangram.className = 'ff-preview-text';
-    pangram.style.fontFamily = info.fontFamily;
-    pangram.style.fontWeight = info.fontWeight;
-    pangram.style.fontStyle = info.fontStyle;
-    pangram.style.letterSpacing = info.letterSpacing;
-    pangram.textContent = 'The quick brown fox';
     var tag = document.createElement('span');
     tag.className = 'ff-preview-tag';
     tag.textContent = 'PREVIEW · ' + (info.primaryFamily || 'detected font');
     preview.appendChild(aa);
-    preview.appendChild(pangram);
     preview.appendChild(tag);
     scroll.appendChild(preview);
 
@@ -1089,7 +1386,7 @@
     addRow(rows, 'Line Height', info.lineHeight);
     addRow(rows, 'Letter Spacing', info.letterSpacing);
     addRow(rows, 'Style', capitalize(String(info.fontStyle || '')));
-    addRow(rows, 'Color', colorToHex(info.color), { swatch: info.color });
+    addRow(rows, 'Color', normalizeColorToHex(info.color), { swatch: info.color });
     scroll.appendChild(rows);
     card.appendChild(scroll);
 
@@ -1296,6 +1593,7 @@
     persistResult: persistResult,
     historyKey: historyKey,
     buildCssText: buildCssText,
+    normalizeColorToHex: normalizeColorToHex,
     getLastResult: function () {
       return lastResult;
     },
