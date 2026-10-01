@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>I Love Fonts – Font Finder</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="popup">
+    <header class="header">
+      <div class="logo" aria-hidden="true">Aa</div>
+      <div class="header-text">
+        <h1>I Love Fonts</h1>
+        <p class="tagline">Identify any font on any website.</p>
+      </div>
+    </header>
+
+    <main class="main">
+      <button id="activateBtn" class="primary-btn" type="button">
+        <span class="btn-icon" aria-hidden="true">◎</span>
+        Activate Font Finder
+      </button>
+      <p id="statusMessage" class="status" role="status">Click above to start inspecting fonts on this page.</p>
+
+      <section class="how-it-works">
+        <h2>How it works</h2>
+        <ol>
+          <li>Activate Font Finder mode</li>
+          <li>Hover over text on a webpage</li>
+          <li>Click to detect its font</li>
+        </ol>
+      </section>
+
+      <section class="result-placeholder">
+        <h2>Font details</h2>
+        <div id="lastFont" class="last-font">
+          <p class="empty-text">No fonts inspected yet.</p>
+        </div>
+      </section>
+
+      <section class="history">
+        <div class="history-head">
+          <h2>Recent Fonts</h2>
+          <button id="clearHistoryBtn" class="link-btn" type="button">Clear History</button>
+        </div>
+        <ul id="historyList" class="history-list">
+          <li class="empty-text">No history yet.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>I Love Fonts – Font Finder v0.1.0</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

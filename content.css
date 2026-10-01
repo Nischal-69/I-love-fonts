@@ -1,0 +1,499 @@
+/* I Love Fonts – Font Finder | content.css
+ * All floating-page UI lives here (no inline <style> injection).
+ * Every selector is scoped to #ff-... / .ff-... / [data-ff-...] so host
+ * page CSS cannot break the card and our CSS cannot leak onto the page.
+ */
+
+/* ---------- Selection mode: cursor + hover highlight ---------- */
+.ff-active,
+.ff-active * {
+  cursor: crosshair !important;
+}
+
+[data-ff-highlight] {
+  outline: 2px solid #2563eb !important;
+  outline-offset: 2px !important;
+}
+
+/* ---------- Active-mode indicator pill ---------- */
+#ff-font-finder-indicator,
+#ff-font-finder-indicator * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+#ff-font-finder-indicator {
+  position: fixed !important;
+  top: 12px;
+  right: 12px;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  color: #ffffff !important;
+  background: #0f1e3d !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 999px !important;
+  padding: 10px 14px !important;
+  box-shadow: 0 8px 24px rgba(15, 30, 61, 0.35) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  animation: ff-pill-in 0.18s ease-out;
+}
+
+#ff-font-finder-indicator .ff-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+}
+
+#ff-font-finder-indicator .ff-hint {
+  color: #a5b4fc !important;
+  font-weight: 400 !important;
+}
+
+/* ---------- Result card ---------- */
+#ff-font-finder-card,
+#ff-font-finder-card *,
+#ff-font-finder-card *::before,
+#ff-font-finder-card *::after {
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  text-shadow: none !important;
+  text-decoration: none !important;
+}
+
+#ff-font-finder-card {
+  --ff-navy: #0f1e3d;
+  --ff-ink: #1e2a4a;
+  --ff-muted: #64748b;
+  --ff-line: #e8edf5;
+  --ff-accent: #2563eb;
+  --ff-accent-dark: #1d4ed8;
+  --ff-soft: #f4f7fd;
+
+  position: fixed !important;
+  bottom: 16px !important;
+  right: 16px !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 340px !important;
+  max-width: calc(100vw - 32px) !important;
+  max-height: min(78vh, 640px) !important;
+  overflow: hidden !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  color: var(--ff-ink) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--ff-line) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(15, 30, 61, 0.25), 0 2px 8px rgba(15, 30, 61, 0.08) !important;
+  animation: ff-card-in 0.22s ease-out;
+}
+
+#ff-font-finder-card .ff-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 14px 16px 12px !important;
+  border-bottom: 1px solid var(--ff-line) !important;
+}
+
+#ff-font-finder-card .ff-eyebrow {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  color: var(--ff-navy) !important;
+}
+
+#ff-font-finder-card .ff-close-x {
+  width: 28px !important;
+  height: 28px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  color: var(--ff-muted) !important;
+  background: var(--ff-soft) !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease !important;
+}
+
+#ff-font-finder-card .ff-close-x:hover {
+  background: #e6edf9 !important;
+  color: var(--ff-navy) !important;
+}
+
+#ff-font-finder-card .ff-close-x:active {
+  transform: scale(0.94) !important;
+}
+
+#ff-font-finder-card .ff-scroll {
+  overflow-y: auto !important;
+  padding: 14px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+}
+
+/* Live preview rendered in the detected typeface (JS sets font-family
+   inline to the full detected stack, so fallback is automatic). */
+#ff-font-finder-card .ff-preview {
+  background: var(--ff-soft) !important;
+  border: 1px solid var(--ff-line) !important;
+  border-radius: 12px !important;
+  padding: 14px !important;
+  overflow: hidden !important;
+}
+
+#ff-font-finder-card .ff-preview-aa {
+  display: block !important;
+  font-size: 40px !important;
+  /* Roomy line box: detected fonts can have tall ascender/descender
+     metrics that a tight line-height would slice off. overflow: visible
+     so glyph ink is never clipped; the parent .ff-preview keeps
+     overflow: hidden for its rounded corners, so layout stays safe. */
+  line-height: 1.3 !important;
+  color: var(--ff-navy) !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+#ff-font-finder-card .ff-preview-text {
+  display: block !important;
+  margin-top: 4px !important;
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  color: var(--ff-ink) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#ff-font-finder-card .ff-preview-tag {
+  display: inline-block !important;
+  margin-top: 10px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  color: var(--ff-accent) !important;
+  background: rgba(37, 99, 235, 0.1) !important;
+  border-radius: 999px !important;
+  padding: 3px 9px !important;
+}
+
+#ff-font-finder-card .ff-rows {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+#ff-font-finder-card .ff-row {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding: 9px 0 !important;
+  border-bottom: 1px dashed var(--ff-line) !important;
+}
+
+#ff-font-finder-card .ff-row:last-child {
+  border-bottom: none !important;
+}
+
+#ff-font-finder-card .ff-label {
+  flex-shrink: 0 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: var(--ff-muted) !important;
+}
+
+#ff-font-finder-card .ff-value {
+  text-align: right !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  color: var(--ff-navy) !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+}
+
+#ff-font-finder-card .ff-value-strong {
+  font-size: 15px !important;
+}
+
+#ff-font-finder-card .ff-value-loaded {
+  color: #15803d !important;
+}
+
+#ff-font-finder-card .ff-value-fallback {
+  color: #b45309 !important;
+}
+
+#ff-font-finder-card .ff-value-muted {
+  color: var(--ff-muted) !important;
+}
+
+#ff-font-finder-card .ff-dot {
+  width: 8px !important;
+  height: 8px !important;
+  flex-shrink: 0 !important;
+  border-radius: 50% !important;
+}
+
+#ff-font-finder-card .ff-stack {
+  display: block !important;
+  margin-top: 2px !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  color: var(--ff-muted) !important;
+}
+
+#ff-font-finder-card .ff-color {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+#ff-font-finder-card .ff-swatch {
+  width: 14px !important;
+  height: 14px !important;
+  flex-shrink: 0 !important;
+  border-radius: 5px !important;
+  border: 1px solid rgba(15, 30, 61, 0.2) !important;
+}
+
+#ff-font-finder-card .ff-footer {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 0 16px 16px !important;
+}
+
+#ff-font-finder-card .ff-btn {
+  appearance: none !important;
+  font: inherit !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  border-radius: 10px !important;
+  padding: 11px 12px !important;
+  cursor: pointer !important;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease !important;
+}
+
+#ff-font-finder-card .ff-btn:active {
+  transform: scale(0.97) !important;
+}
+
+#ff-font-finder-card .ff-btn-copy {
+  flex: 1 1 0 !important;
+  color: #ffffff !important;
+  background: var(--ff-accent) !important;
+  border: 1px solid var(--ff-accent) !important;
+}
+
+#ff-font-finder-card .ff-btn-copy:hover {
+  background: var(--ff-accent-dark) !important;
+  border-color: var(--ff-accent-dark) !important;
+}
+
+#ff-font-finder-card .ff-btn-css {
+  flex: 1 1 0 !important;
+  color: var(--ff-accent) !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+  border: 1px solid rgba(37, 99, 235, 0.3) !important;
+}
+
+#ff-font-finder-card .ff-btn-css:hover {
+  background: rgba(37, 99, 235, 0.15) !important;
+}
+
+#ff-font-finder-card .ff-btn-close {
+  flex: 1 1 100% !important;
+  color: var(--ff-muted) !important;
+  background: transparent !important;
+  border: 1px solid var(--ff-line) !important;
+}
+
+#ff-font-finder-card .ff-btn-close:hover {
+  color: var(--ff-navy) !important;
+  background: var(--ff-soft) !important;
+}
+
+#ff-font-finder-card .ff-btn:focus-visible,
+#ff-font-finder-card .ff-close-x:focus-visible {
+  outline: 2px solid var(--ff-accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* ---------- Hover font tooltip (instant name, no click required) ---------- */
+/* Positioned via inline transform from rAF; never touches page layout and
+   never intercepts mouse events (pointer-events: none). */
+#ff-font-finder-hover,
+#ff-font-finder-hover * {
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#ff-font-finder-hover {
+  position: fixed !important;
+  left: 0 !important;
+  top: 0 !important;
+  z-index: 2147483647 !important;
+  display: block !important;
+  max-width: 280px !important;
+  padding: 8px 12px !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  line-height: 1.35 !important;
+  background: #ffffff !important;
+  border: 1px solid #e8edf5 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(15, 30, 61, 0.18), 0 1px 4px rgba(15, 30, 61, 0.08) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  overflow: hidden !important;
+  will-change: transform !important;
+}
+
+#ff-font-finder-hover .ff-hover-name {
+  display: block !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #0f1e3d !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#ff-font-finder-hover .ff-hover-meta {
+  display: block !important;
+  margin-top: 1px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+}
+
+#ff-font-finder-hover.ff-hover-show {
+  animation: ff-hover-in 0.14s ease-out;
+}
+
+/* ---------- Copy notification toast ---------- */
+#ff-font-finder-toast {
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 10px 16px !important;
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 2147483647 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  color: #ffffff !important;
+  background: #0f1e3d !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 24px rgba(15, 30, 61, 0.35) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+  animation: ff-toast-in 0.18s ease-out;
+}
+
+#ff-font-finder-toast.ff-toast-error {
+  background: #b91c1c !important;
+}
+
+/* ---------- Animations (subtle) ---------- */
+@keyframes ff-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes ff-pill-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ff-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Opacity-only: the tip is positioned with an inline transform, so the
+   entrance animation must not touch transform (no jump on show). */
+@keyframes ff-hover-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 420px) {
+  #ff-font-finder-card {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 12px !important;
+    width: auto !important;
+    max-width: none !important;
+    max-height: 82vh !important;
+  }
+
+  #ff-font-finder-card .ff-preview-aa {
+    font-size: 32px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #ff-font-finder-card,
+  #ff-font-finder-indicator,
+  #ff-font-finder-toast,
+  #ff-font-finder-hover {
+    animation: none !important;
+  }
+
+  #ff-font-finder-card .ff-btn,
+  #ff-font-finder-card .ff-close-x {
+    transition: none !important;
+  }
+}
