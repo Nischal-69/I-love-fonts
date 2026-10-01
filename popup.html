@@ -8,51 +8,41 @@
 </head>
 <body>
   <div class="popup">
-    <header class="header">
+    <header class="brand">
       <div class="logo" aria-hidden="true">Aa</div>
-      <div class="header-text">
+      <div class="brand-text">
         <h1>I Love Fonts</h1>
-        <p class="tagline">Identify any font on any website.</p>
+        <p class="tagline">Find any font instantly.</p>
       </div>
+      <span class="version">v0.1.0</span>
     </header>
 
     <main class="main">
       <button id="activateBtn" class="primary-btn" type="button">
-        <span class="btn-icon" aria-hidden="true">◎</span>
-        Activate Font Finder
+        <svg class="btn-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+        <span>Activate Font Finder</span>
       </button>
-      <p id="statusMessage" class="status" role="status">Click above to start inspecting fonts on this page.</p>
+      <p id="statusMessage" class="status" role="status">Hover any text to identify it.</p>
 
-      <section class="how-it-works">
-        <h2>How it works</h2>
-        <ol>
-          <li>Activate Font Finder mode</li>
-          <li>Hover over text on a webpage</li>
-          <li>Click to detect its font</li>
-        </ol>
-      </section>
-
-      <section class="result-placeholder">
-        <h2>Font details</h2>
+      <section class="block">
+        <div class="block-head">
+          <h2>Last detected</h2>
+        </div>
         <div id="lastFont" class="last-font">
           <p class="empty-text">No fonts inspected yet.</p>
         </div>
       </section>
 
-      <section class="history">
-        <div class="history-head">
-          <h2>Recent Fonts</h2>
-          <button id="clearHistoryBtn" class="link-btn" type="button">Clear History</button>
+      <section class="block">
+        <div class="block-head">
+          <h2>Recent</h2>
+          <button id="clearHistoryBtn" class="link-btn" type="button">Clear</button>
         </div>
         <ul id="historyList" class="history-list">
           <li class="empty-text">No history yet.</li>
         </ul>
       </section>
     </main>
-
-    <footer class="footer">
-      <span>I Love Fonts – Font Finder v0.1.0</span>
-    </footer>
   </div>
 
   <script src="popup.js"></script>
