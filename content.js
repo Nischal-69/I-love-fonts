@@ -239,6 +239,315 @@
     return String(name || '').replace(/^["']|["']$/g, '').trim();
   }
 
+  // ---------- Google Fonts link (no API, no download) ----------
+  //
+  // Verification prefers the page's actual loaded sources over assuming a
+  // name exists on Google Fonts:
+  //  - <link href="...fonts.googleapis.com..."> family= params (css + css2)
+  //  - @font-face rules whose src points at fonts.gstatic.com/googleapis
+  // A family is "verified" only when it appears in one of those sources
+  // (case-insensitive). Anything else falls back to a Google Fonts search.
+  // URLs:
+  //  - Verified:   https://fonts.google.com/specimen/<Family+With+Pluses>
+  //  - Unverified: https://fonts.google.com/?query=<encoded>
+  // Opened via the background worker with chrome.tabs.create().
+
+  function cleanFamilyName(name) {
+    return stripFamilyQuotes(name).replace(/\s+/g, ' ').trim();
+  }
+
+  function stripVariableSuffix(name) {
+    // Variable faces (e.g. "Inter Variable") still live under the base
+    // specimen page, so link the base family.
+    return String(name || '')
+      .replace(/\s+variable$/i, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalizeForCompare(name) {
+    return stripVariableSuffix(cleanFamilyName(name)).toLowerCase();
+  }
+
+  function buildGoogleFontsSpecimenUrl(family) {
+    var clean = stripVariableSuffix(cleanFamilyName(family));
+    if (!clean) {
+      return '';
+    }
+    // Google Fonts specimen pages use "+" for spaces:
+    // "Plus Jakarta Sans" -> Plus+Jakarta+Sans. encodeURIComponent handles
+    // special characters; only the %20 form is converted to "+".
+    var encoded = encodeURIComponent(clean).replace(/%20/g, '+');
+    return 'https://fonts.google.com/specimen/' + encoded;
+  }
+
+  function buildGoogleFontsSearchUrl(family) {
+    var clean = stripVariableSuffix(cleanFamilyName(family));
+    if (!clean) {
+      return 'https://fonts.google.com/';
+    }
+    return 'https://fonts.google.com/?query=' + encodeURIComponent(clean);
+  }
+
+  // Extract family names from a Google Fonts stylesheet URL. Handles:
+  //  - css2: ?family=Inter:wght@400;700&family=Plus+Jakarta+Sans:ital,wght@...
+  //  - css v1: ?family=Roboto|Open+Sans
+  function parseGoogleFontsHref(href) {
+    var families = [];
+    function pushOne(raw) {
+      var name = String(raw || '').split(':')[0].replace(/\+/g, ' ');
+      name = stripVariableSuffix(cleanFamilyName(name));
+      if (name) {
+        families.push(name);
+      }
+    }
+    try {
+      var url = new URL(String(href), window.location.href);
+      var params = url.searchParams.getAll('family');
+      params.forEach(function (p) {
+        String(p || '')
+          .split('|')
+          .forEach(pushOne);
+      });
+      if (families.length > 0) {
+        return families;
+      }
+    } catch (e) {
+      // Fall through to regex parsing below.
+    }
+    try {
+      var re = /[?&]family=([^&#;]+)/g;
+      var m;
+      var rawHref = String(href || '');
+      var hit = false;
+      while ((m = re.exec(rawHref)) !== null) {
+        hit = true;
+        var decoded = '';
+        try {
+          decoded = decodeURIComponent(m[1].replace(/\+/g, ' '));
+        } catch (e2) {
+          decoded = m[1].replace(/\+/g, ' ');
+        }
+        decoded.split('|').forEach(pushOne);
+      }
+      if (hit) {
+        return families;
+      }
+    } catch (e) {
+      // Ignore malformed hrefs.
+    }
+    return families;
+  }
+
+  function isGoogleFontsUrl(text) {
+    var lower = String(text || '').toLowerCase();
+    return (
+      lower.indexOf('fonts.googleapis.com') !== -1 ||
+      lower.indexOf('fonts.gstatic.com') !== -1
+    );
+  }
+
+  // Scan the page's actual loaded sources for Google-served families.
+  // Returns a map of normalized name -> display name. Rebuilt on every
+  // detection (click-only, never on hover) so late-injected @font-face
+  // rules are picked up. Never throws; cross-origin sheets are skipped.
+  function collectGoogleFontsFamilies() {
+    var found = {};
+    function add(name) {
+      var clean = stripVariableSuffix(cleanFamilyName(name));
+      if (!clean) {
+        return;
+      }
+      if (GENERIC_FAMILIES[clean.toLowerCase()]) {
+        return;
+      }
+      found[clean.toLowerCase()] = clean;
+    }
+    // 1. Stylesheet links (<link> + @import).
+    try {
+      var links = document.querySelectorAll('link[href]');
+      for (var i = 0; i < links.length; i++) {
+        var href = links[i].getAttribute('href') || '';
+        if (!isGoogleFontsUrl(href)) {
+          continue;
+        }
+        var fams = parseGoogleFontsHref(href);
+        for (var j = 0; j < fams.length; j++) {
+          add(fams[j]);
+        }
+      }
+    } catch (e) {
+      // DOM query must never break detection.
+    }
+    // 2. @font-face rules pointing at Google's CDN (covers the css2
+    //    loader, which injects a <style> of @font-face blocks with
+    //    fonts.gstatic.com src URLs).
+    try {
+      var sheets = document.styleSheets;
+      for (var s = 0; s < sheets.length; s++) {
+        var rules = null;
+        try {
+          rules = sheets[s].cssRules;
+        } catch (e) {
+          continue; // Cross-origin sheet — unreadable, skip.
+        }
+        if (!rules) {
+          continue;
+        }
+        for (var r = 0; r < rules.length; r++) {
+          var rule = rules[r];
+          try {
+            // @import pointing at Google Fonts (kept for completeness).
+            if (rule && typeof rule.href === 'string' && isGoogleFontsUrl(rule.href)) {
+              var imported = parseGoogleFontsHref(rule.href);
+              for (var k = 0; k < imported.length; k++) {
+                add(imported[k]);
+              }
+              continue;
+            }
+            var cssText = (rule && rule.cssText) || '';
+            var isFace =
+              (rule && rule.type === 5) ||
+              (cssText && cssText.toLowerCase().indexOf('@font-face') === 0);
+            if (!isFace) {
+              continue;
+            }
+            if (!isGoogleFontsUrl(cssText)) {
+              continue;
+            }
+            var fam = '';
+            try {
+              if (rule.style && typeof rule.style.getPropertyValue === 'function') {
+                fam = rule.style.getPropertyValue('font-family') || '';
+              }
+            } catch (e2) {
+              fam = '';
+            }
+            if (!fam) {
+              var mm = cssText.match(/font-family\s*:\s*([^;]+)/i);
+              if (mm) {
+                fam = mm[1];
+              }
+            }
+            if (fam) {
+              // Respect quoted commas: "Some, Font" stays one entry.
+              add(splitFontStack(fam)[0] || fam);
+            }
+          } catch (e3) {
+            // One bad rule must not abort the scan.
+          }
+        }
+      }
+    } catch (e) {
+      // Stylesheet scan must never break detection.
+    }
+    return found;
+  }
+
+  function isVerifiedGoogleFont(family, googleSet) {
+    var norm = normalizeForCompare(family);
+    if (!norm || GENERIC_FAMILIES[norm]) {
+      return false;
+    }
+    if (!googleSet) {
+      return false;
+    }
+    return Boolean(googleSet[norm]);
+  }
+
+  // Resolve which family the Google Fonts row should link. Prefers the
+  // verified detected family, then the verified primary family, then any
+  // verified fallback-stack entry. Unverified names fall back to search.
+  // Returns null when no displayable family exists.
+  function getGoogleFontsInfo(primaryFamily, detectedFamily, declaredStack) {
+    var googleSet = {};
+    try {
+      googleSet = collectGoogleFontsFamilies();
+    } catch (e) {
+      googleSet = {};
+    }
+    var candidates = [];
+    function pushCandidate(name) {
+      var clean = stripVariableSuffix(cleanFamilyName(name));
+      if (!clean || candidates.indexOf(clean) !== -1) {
+        return;
+      }
+      if (GENERIC_FAMILIES[clean.toLowerCase()]) {
+        return;
+      }
+      candidates.push(clean);
+    }
+    pushCandidate(detectedFamily);
+    pushCandidate(primaryFamily);
+    if (Array.isArray(declaredStack)) {
+      for (var i = 0; i < declaredStack.length; i++) {
+        pushCandidate(declaredStack[i]);
+      }
+    }
+    var verified = '';
+    for (var c = 0; c < candidates.length; c++) {
+      if (isVerifiedGoogleFont(candidates[c], googleSet)) {
+        verified = candidates[c];
+        break;
+      }
+    }
+    var display =
+      stripVariableSuffix(cleanFamilyName(detectedFamily)) ||
+      stripVariableSuffix(cleanFamilyName(primaryFamily)) ||
+      (candidates[0] || '');
+    if (!display) {
+      return null;
+    }
+    if (verified) {
+      return {
+        family: verified,
+        isVerified: true,
+        label: 'View Font',
+        url: buildGoogleFontsSpecimenUrl(verified)
+      };
+    }
+    return {
+      family: display,
+      isVerified: false,
+      label: 'Search Font',
+      url: buildGoogleFontsSearchUrl(display)
+    };
+  }
+
+  // Open a Google Fonts URL in a new tab via the background worker
+  // (chrome.tabs.create). Falls back to window.open when messaging fails.
+  function openGoogleFontsUrl(url) {
+    if (!url) {
+      return;
+    }
+    try {
+      if (chrome && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage(
+          { type: 'OPEN_GOOGLE_FONTS', url: url },
+          function () {
+            // Background has no response payload; a lastError here means
+            // no listener (e.g. tests) — fall back to window.open.
+            try {
+              if (chrome.runtime.lastError) {
+                window.open(url, '_blank', 'noopener');
+              }
+            } catch (e) {
+              // Fallback already attempted; ignore.
+            }
+          }
+        );
+        return;
+      }
+    } catch (e) {
+      // Fall through to window.open.
+    }
+    try {
+      window.open(url, '_blank', 'noopener');
+    } catch (e2) {
+      // Popup blockers must never break the card.
+    }
+  }
+
   function documentFontsApi() {
     try {
       if (
@@ -380,13 +689,24 @@
     var cs = window.getComputedStyle(element);
     var fontFamily = cs.getPropertyValue('font-family') || cs.fontFamily;
     var resolved = resolveFontStatus(fontFamily);
+    var primary = getPrimaryFontFamily(fontFamily);
+    var google = null;
+    try {
+      google = getGoogleFontsInfo(primary, resolved.detected, resolved.declared);
+    } catch (e) {
+      google = null;
+    }
     return {
       fontFamily: fontFamily,
-      primaryFamily: getPrimaryFontFamily(fontFamily),
+      primaryFamily: primary,
       declaredStack: resolved.declared,
       detectedFamily: resolved.detected,
       fontStatus: resolved.status,
       fontStatusReason: resolved.reason,
+      googleFamily: google ? google.family : '',
+      isGoogleFont: google ? google.isVerified : false,
+      googleFontsUrl: google ? google.url : '',
+      googleFontsLabel: google ? google.label : 'Search Font',
       fontSize: cs.getPropertyValue('font-size') || cs.fontSize,
       fontWeight: cs.getPropertyValue('font-weight') || cs.fontWeight,
       fontStyle: cs.getPropertyValue('font-style') || cs.fontStyle,
@@ -420,6 +740,10 @@
         detectedFamily: info.detectedFamily || info.primaryFamily,
         fontStatus: info.fontStatus || 'unknown',
         fontStatusReason: info.fontStatusReason || '',
+        googleFamily: info.googleFamily || '',
+        isGoogleFont: Boolean(info.isGoogleFont),
+        googleFontsUrl: info.googleFontsUrl || '',
+        googleFontsLabel: info.googleFontsLabel || 'Search Font',
         fontSize: info.fontSize,
         fontWeight: info.fontWeight,
         fontStyle: info.fontStyle,
@@ -1303,6 +1627,59 @@
     return row;
   }
 
+  // Compact Google Fonts row: label + a single small button.
+  // Verified families show "View Font" (specimen page); everything else
+  // shows "Search Font" (Google Fonts search). Opens via background
+  // chrome.tabs.create(), never downloads the font.
+  function addGoogleFontsRow(body, info) {
+    var gf = null;
+    try {
+      if (info && info.googleFontsUrl) {
+        gf = {
+          family: info.googleFamily || info.detectedFamily || info.primaryFamily || '',
+          isVerified: Boolean(info.isGoogleFont),
+          label: info.googleFontsLabel || (info.isGoogleFont ? 'View Font' : 'Search Font'),
+          url: info.googleFontsUrl
+        };
+      } else {
+        gf = getGoogleFontsInfo(
+          (info && (info.primaryFamily || info.detectedFamily)) || '',
+          (info && (info.detectedFamily || info.primaryFamily)) || '',
+          (info && info.declaredStack) || []
+        );
+      }
+    } catch (e) {
+      gf = null;
+    }
+    if (!gf || !gf.url) {
+      return;
+    }
+    var row = document.createElement('div');
+    row.className = 'ff-row ff-row-gf';
+    var labelEl = document.createElement('span');
+    labelEl.className = 'ff-label';
+    labelEl.textContent = 'Google Fonts';
+    var valueEl = document.createElement('span');
+    valueEl.className = 'ff-value ff-value-gf';
+    var btn = document.createElement('button');
+    btn.className =
+      'ff-gf-btn' + (gf.isVerified ? ' ff-gf-verified' : ' ff-gf-search');
+    btn.type = 'button';
+    btn.textContent = gf.isVerified ? 'View Font' : 'Search Font';
+    btn.setAttribute('aria-label', btn.textContent + ' — ' + gf.family + ' on Google Fonts');
+    btn.setAttribute('title', gf.url);
+    (function (url) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        openGoogleFontsUrl(url);
+      });
+    })(gf.url);
+    valueEl.appendChild(btn);
+    row.appendChild(labelEl);
+    row.appendChild(valueEl);
+    body.appendChild(row);
+  }
+
   function showPanel(info) {
     hidePanel();
 
@@ -1387,6 +1764,7 @@
     addRow(rows, 'Letter Spacing', info.letterSpacing);
     addRow(rows, 'Style', capitalize(String(info.fontStyle || '')));
     addRow(rows, 'Color', normalizeColorToHex(info.color), { swatch: info.color });
+    addGoogleFontsRow(rows, info);
     scroll.appendChild(rows);
     card.appendChild(scroll);
 
@@ -1594,6 +1972,15 @@
     historyKey: historyKey,
     buildCssText: buildCssText,
     normalizeColorToHex: normalizeColorToHex,
+    cleanFamilyName: cleanFamilyName,
+    stripVariableSuffix: stripVariableSuffix,
+    buildGoogleFontsSpecimenUrl: buildGoogleFontsSpecimenUrl,
+    buildGoogleFontsSearchUrl: buildGoogleFontsSearchUrl,
+    parseGoogleFontsHref: parseGoogleFontsHref,
+    collectGoogleFontsFamilies: collectGoogleFontsFamilies,
+    isVerifiedGoogleFont: isVerifiedGoogleFont,
+    getGoogleFontsInfo: getGoogleFontsInfo,
+    openGoogleFontsUrl: openGoogleFontsUrl,
     getLastResult: function () {
       return lastResult;
     },

@@ -30,6 +30,119 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Detail box: shows the saved information of the selected history item
   // (or the latest inspection when nothing is selected yet).
+  // Google Fonts helpers (mirrors content.js; popup uses the stored
+  // verification from detection — no API, no download).
+  function cleanGfName(name) {
+    return String(name || '').replace(/^["']|["']$/g, '').replace(/\s+/g, ' ').trim();
+  }
+
+  function stripGfVariable(name) {
+    return String(name || '').replace(/\s+variable$/i, '').replace(/\s+/g, ' ').trim();
+  }
+
+  // Split a font-family stack on top-level commas (respects quotes), so
+  // values like '"Some, Font", Arial' parse correctly.
+  function splitGfStack(stack) {
+    const parts = [];
+    let current = '';
+    let quote = null;
+    const s = String(stack || '');
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (quote) {
+        current += ch;
+        if (ch === quote) {
+          quote = null;
+        }
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+        current += ch;
+      } else if (ch === ',') {
+        if (current.trim()) {
+          parts.push(current.trim());
+        }
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    if (current.trim()) {
+      parts.push(current.trim());
+    }
+    return parts.filter(Boolean);
+  }
+
+  function specimenUrl(family) {
+    const clean = stripGfVariable(cleanGfName(family));
+    if (!clean) {
+      return '';
+    }
+    return 'https://fonts.google.com/specimen/' + encodeURIComponent(clean).replace(/%20/g, '+');
+  }
+
+  function searchUrl(family) {
+    const clean = stripGfVariable(cleanGfName(family));
+    if (!clean) {
+      return 'https://fonts.google.com/';
+    }
+    return 'https://fonts.google.com/?query=' + encodeURIComponent(clean);
+  }
+
+  // Prefer the verification stored by content.js (from actual page sources).
+  // Older history entries without it fall back to an unverified search link.
+  function resolveGoogleLink(entry) {
+    if (!entry) {
+      return null;
+    }
+    if (entry.googleFontsUrl) {
+      const verified = Boolean(entry.isGoogleFont);
+      return {
+        family: entry.googleFamily || entry.detectedFamily || entry.primaryFamily || entry.family || '',
+        isVerified: verified,
+        label: verified ? 'View Font' : 'Search Font',
+        url: entry.googleFontsUrl
+      };
+    }
+    const name =
+      entry.detectedFamily || entry.primaryFamily || entry.family || entry.fontFamily || '';
+    const first = Array.isArray(name) ? name[0] : (splitGfStack(name)[0] || '');
+    const clean = stripGfVariable(cleanGfName(first));
+    if (!clean) {
+      return null;
+    }
+    if (entry.isGoogleFont) {
+      return { family: clean, isVerified: true, label: 'View Font', url: specimenUrl(clean) };
+    }
+    return { family: clean, isVerified: false, label: 'Search Font', url: searchUrl(clean) };
+  }
+
+  function openGoogleFonts(url) {
+    if (!url) {
+      return;
+    }
+    try {
+      if (chrome && chrome.tabs && typeof chrome.tabs.create === 'function') {
+        chrome.tabs.create({ url });
+        return;
+      }
+    } catch (err) {
+      // Fall through to runtime messaging.
+    }
+    try {
+      if (chrome && chrome.runtime && typeof chrome.runtime.sendMessage === 'function') {
+        chrome.runtime.sendMessage({ type: 'OPEN_GOOGLE_FONTS', url });
+        return;
+      }
+    } catch (err) {
+      // Ignore — popup stays usable.
+    }
+    try {
+      window.open(url, '_blank', 'noopener');
+    } catch (err) {
+      // Never break the popup.
+    }
+  }
+
   function renderLastFont(entry) {
     lastFont.innerHTML = '';
     if (!entry) {
@@ -72,6 +185,27 @@ document.addEventListener('DOMContentLoaded', () => {
       sub.className = 'last-font-meta';
       sub.textContent = context.join(' · ');
       lastFont.appendChild(sub);
+    }
+
+    // Google Fonts row: compact, matches card. Verified → View Font
+    // (specimen page); otherwise → Search Font. Opens via chrome.tabs.create().
+    const gf = resolveGoogleLink(entry);
+    if (gf && gf.url) {
+      const gfRow = document.createElement('div');
+      gfRow.className = 'gf-row';
+      const gfLabel = document.createElement('span');
+      gfLabel.className = 'gf-label';
+      gfLabel.textContent = 'Google Fonts';
+      const gfBtn = document.createElement('button');
+      gfBtn.type = 'button';
+      gfBtn.className = 'gf-btn' + (gf.isVerified ? ' gf-verified' : ' gf-search');
+      gfBtn.textContent = gf.label;
+      gfBtn.setAttribute('aria-label', `${gf.label} — ${gf.family} on Google Fonts`);
+      gfBtn.setAttribute('title', gf.url);
+      gfBtn.addEventListener('click', () => openGoogleFonts(gf.url));
+      gfRow.appendChild(gfLabel);
+      gfRow.appendChild(gfBtn);
+      lastFont.appendChild(gfRow);
     }
   }
 

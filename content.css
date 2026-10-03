@@ -375,6 +375,50 @@
   background: var(--ff-soft) !important;
 }
 
+#ff-font-finder-card .ff-value-gf {
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+
+#ff-font-finder-card .ff-gf-btn {
+  appearance: none !important;
+  font: inherit !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  border-radius: 999px !important;
+  padding: 7px 12px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease !important;
+}
+
+#ff-font-finder-card .ff-gf-btn:active {
+  transform: scale(0.96) !important;
+}
+
+#ff-font-finder-card .ff-gf-verified {
+  color: #ffffff !important;
+  background: var(--ff-accent) !important;
+  border: 1px solid var(--ff-accent) !important;
+}
+
+#ff-font-finder-card .ff-gf-verified:hover {
+  background: var(--ff-accent-dark) !important;
+  border-color: var(--ff-accent-dark) !important;
+}
+
+#ff-font-finder-card .ff-gf-search {
+  color: var(--ff-accent) !important;
+  background: rgba(37, 99, 235, 0.08) !important;
+  border: 1px solid rgba(37, 99, 235, 0.3) !important;
+}
+
+#ff-font-finder-card .ff-gf-search:hover {
+  background: rgba(37, 99, 235, 0.15) !important;
+}
+
+#ff-font-finder-card .ff-gf-btn:focus-visible,
 #ff-font-finder-card .ff-btn:focus-visible,
 #ff-font-finder-card .ff-close-x:focus-visible {
   outline: 2px solid var(--ff-accent) !important;

@@ -222,6 +222,61 @@ body {
   color: #9ca3af;
 }
 
+/* Google Fonts row — compact, matches card + popup tone */
+.gf-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px dashed #e9edf3;
+}
+
+.gf-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.gf-btn {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.gf-btn:focus-visible {
+  outline: 2px solid #4f46e5;
+  outline-offset: 1px;
+}
+
+.gf-verified {
+  color: #ffffff;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border: 1px solid #4f46e5;
+}
+
+.gf-verified:hover {
+  filter: brightness(1.06);
+}
+
+.gf-search {
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+}
+
+.gf-search:hover {
+  background: #e0e7ff;
+}
+
 /* History — compact rows */
 .history-list {
   list-style: none;
