@@ -92,16 +92,67 @@
     }
     var badge = document.createElement('div');
     badge.id = INDICATOR_ID;
-    var dot = document.createElement('span');
-    dot.className = 'ff-dot';
-    dot.setAttribute('aria-hidden', 'true');
+    badge.setAttribute('aria-hidden', 'true');
+    var iconWrap = document.createElement('span');
+    iconWrap.className = 'ff-icon';
+    iconWrap.setAttribute('aria-hidden', 'true');
+    // Inline SVG target mark: white ring + ticks, cobalt center dot.
+    // Built with createElementNS (never innerHTML) so detected page
+    // content can never inject markup here.
+    try {
+      var svgNS = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(svgNS, 'svg');
+      svg.setAttribute('width', '18');
+      svg.setAttribute('height', '18');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('aria-hidden', 'true');
+      var ring = document.createElementNS(svgNS, 'circle');
+      ring.setAttribute('cx', '12');
+      ring.setAttribute('cy', '12');
+      ring.setAttribute('r', '7');
+      ring.setAttribute('stroke', '#FFFFFF');
+      ring.setAttribute('stroke-width', '2');
+      svg.appendChild(ring);
+      var ticks = [
+        [12, 1.5, 12, 4.5],
+        [12, 19.5, 12, 22.5],
+        [1.5, 12, 4.5, 12],
+        [19.5, 12, 22.5, 12]
+      ];
+      for (var t = 0; t < ticks.length; t++) {
+        var line = document.createElementNS(svgNS, 'line');
+        line.setAttribute('x1', ticks[t][0]);
+        line.setAttribute('y1', ticks[t][1]);
+        line.setAttribute('x2', ticks[t][2]);
+        line.setAttribute('y2', ticks[t][3]);
+        line.setAttribute('stroke', '#FFFFFF');
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(line);
+      }
+      var center = document.createElementNS(svgNS, 'circle');
+      center.setAttribute('cx', '12');
+      center.setAttribute('cy', '12');
+      center.setAttribute('r', '3');
+      center.setAttribute('fill', '#2563EB');
+      center.setAttribute('stroke', '#FFFFFF');
+      center.setAttribute('stroke-width', '1.5');
+      svg.appendChild(center);
+      iconWrap.appendChild(svg);
+    } catch (e) {
+      // SVG unavailable — fall back to the CSS dot so the pill
+      // still shows an accent marker instead of nothing.
+      iconWrap.className = 'ff-dot';
+    }
     var label = document.createElement('span');
+    label.className = 'ff-label';
     // textContent only — no HTML injection risk, no interference.
     label.textContent = 'I Love Fonts';
     var hint = document.createElement('span');
     hint.className = 'ff-hint';
     hint.textContent = '· Active · Esc to exit';
-    badge.appendChild(dot);
+    badge.appendChild(iconWrap);
     badge.appendChild(label);
     badge.appendChild(hint);
     document.documentElement.appendChild(badge);
@@ -1698,7 +1749,35 @@
     xBtn.className = 'ff-close-x';
     xBtn.type = 'button';
     xBtn.setAttribute('aria-label', 'Close panel');
-    xBtn.textContent = '×';
+    // Inline SVG "X" (never innerHTML) — crisp at any zoom, inherits
+    // the button's muted/hover color via currentColor.
+    try {
+      var xSvgNS = 'http://www.w3.org/2000/svg';
+      var xSvg = document.createElementNS(xSvgNS, 'svg');
+      xSvg.setAttribute('width', '12');
+      xSvg.setAttribute('height', '12');
+      xSvg.setAttribute('viewBox', '0 0 12 12');
+      xSvg.setAttribute('fill', 'none');
+      xSvg.setAttribute('aria-hidden', 'true');
+      var xLines = [
+        [2.5, 2.5, 9.5, 9.5],
+        [9.5, 2.5, 2.5, 9.5]
+      ];
+      for (var xl = 0; xl < xLines.length; xl++) {
+        var xLine = document.createElementNS(xSvgNS, 'line');
+        xLine.setAttribute('x1', xLines[xl][0]);
+        xLine.setAttribute('y1', xLines[xl][1]);
+        xLine.setAttribute('x2', xLines[xl][2]);
+        xLine.setAttribute('y2', xLines[xl][3]);
+        xLine.setAttribute('stroke', 'currentColor');
+        xLine.setAttribute('stroke-width', '2');
+        xLine.setAttribute('stroke-linecap', 'round');
+        xSvg.appendChild(xLine);
+      }
+      xBtn.appendChild(xSvg);
+    } catch (e) {
+      xBtn.textContent = '×';
+    }
     xBtn.addEventListener('click', function (e) {
       e.stopPropagation();
       hidePanel();

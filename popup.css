@@ -52,14 +52,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  font-weight: 800;
-  font-family: Georgia, "Times New Roman", serif;
-  letter-spacing: -0.02em;
   color: #FFFFFF;
   background: var(--ink);
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
+}
+
+.logo svg {
+  display: block;
 }
 
 .brand-text {
