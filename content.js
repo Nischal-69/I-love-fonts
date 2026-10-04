@@ -1560,7 +1560,7 @@
       return {
         label: '✓ Loaded',
         valueClass: 'ff-value-loaded',
-        dot: '#22c55e',
+        dot: '#16A34A',
         sub: 'Declared font verified on this page'
       };
     }
@@ -1568,7 +1568,7 @@
       return {
         label: '⚠ Fallback',
         valueClass: 'ff-value-fallback',
-        dot: '#f59e0b',
+        dot: '#F59E0B',
         sub:
           info.fontStatusReason === 'generic'
             ? 'System default — exact face unknown'
@@ -1578,7 +1578,7 @@
     return {
       label: 'Not checked',
       valueClass: 'ff-value-muted',
-      dot: '#94a3b8',
+      dot: '#64748B',
       sub: 'Font Loading API unavailable'
     };
   }

@@ -11,7 +11,7 @@
 }
 
 [data-ff-highlight] {
-  outline: 2px solid #2563eb !important;
+  outline: 2px solid #F59E0B !important;
   outline-offset: 2px !important;
 }
 
@@ -35,12 +35,12 @@
   font-size: 13px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
-  color: #ffffff !important;
-  background: #0f1e3d !important;
+  color: #FFFFFF !important;
+  background: #0F172A !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   border-radius: 999px !important;
   padding: 10px 14px !important;
-  box-shadow: 0 8px 24px rgba(15, 30, 61, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important;
   pointer-events: none !important;
   user-select: none !important;
   animation: ff-pill-in 0.18s ease-out;
@@ -50,12 +50,12 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #38bdf8;
-  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.2);
+  background: #F59E0B;
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.22);
 }
 
 #ff-font-finder-indicator .ff-hint {
-  color: #a5b4fc !important;
+  color: #E2E8F0 !important;
   font-weight: 400 !important;
 }
 
@@ -74,13 +74,13 @@
 }
 
 #ff-font-finder-card {
-  --ff-navy: #0f1e3d;
-  --ff-ink: #1e2a4a;
-  --ff-muted: #64748b;
-  --ff-line: #e8edf5;
-  --ff-accent: #2563eb;
-  --ff-accent-dark: #1d4ed8;
-  --ff-soft: #f4f7fd;
+  --ff-navy: #0F172A;
+  --ff-ink: #0F172A;
+  --ff-muted: #64748B;
+  --ff-line: #E2E8F0;
+  --ff-accent: #F59E0B;
+  --ff-accent-dark: #D97706;
+  --ff-soft: #F8FAFC;
 
   position: fixed !important;
   bottom: 16px !important;
@@ -96,10 +96,10 @@
   font-size: 13px !important;
   line-height: 1.5 !important;
   color: var(--ff-ink) !important;
-  background: #ffffff !important;
+  background: #FFFFFF !important;
   border: 1px solid var(--ff-line) !important;
   border-radius: 16px !important;
-  box-shadow: 0 20px 60px rgba(15, 30, 61, 0.25), 0 2px 8px rgba(15, 30, 61, 0.08) !important;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25), 0 2px 8px rgba(15, 23, 42, 0.08) !important;
   animation: ff-card-in 0.22s ease-out;
 }
 
@@ -134,7 +134,7 @@
 }
 
 #ff-font-finder-card .ff-close-x:hover {
-  background: #e6edf9 !important;
+  background: #E2E8F0 !important;
   color: var(--ff-navy) !important;
 }
 
@@ -202,8 +202,8 @@
   font-size: 10px !important;
   font-weight: 700 !important;
   letter-spacing: 0.1em !important;
-  color: var(--ff-accent) !important;
-  background: rgba(37, 99, 235, 0.1) !important;
+  color: #0F172A !important;
+  background: rgba(245, 158, 11, 0.18) !important;
   border-radius: 999px !important;
   padding: 3px 9px !important;
   white-space: nowrap !important;
@@ -261,11 +261,11 @@
 }
 
 #ff-font-finder-card .ff-value-loaded {
-  color: #15803d !important;
+  color: #16A34A !important;
 }
 
 #ff-font-finder-card .ff-value-fallback {
-  color: #b45309 !important;
+  color: #B45309 !important;
 }
 
 #ff-font-finder-card .ff-value-muted {
@@ -309,7 +309,7 @@
   height: 14px !important;
   flex-shrink: 0 !important;
   border-radius: 5px !important;
-  border: 1px solid rgba(15, 30, 61, 0.2) !important;
+  border: 1px solid rgba(15, 23, 42, 0.2) !important;
 }
 
 #ff-font-finder-card .ff-footer {
@@ -342,25 +342,26 @@
 
 #ff-font-finder-card .ff-btn-copy {
   flex: 1 1 0 !important;
-  color: #ffffff !important;
+  color: #0F172A !important;
   background: var(--ff-accent) !important;
   border: 1px solid var(--ff-accent) !important;
 }
 
 #ff-font-finder-card .ff-btn-copy:hover {
+  color: #0F172A !important;
   background: var(--ff-accent-dark) !important;
   border-color: var(--ff-accent-dark) !important;
 }
 
 #ff-font-finder-card .ff-btn-css {
   flex: 1 1 0 !important;
-  color: var(--ff-accent) !important;
-  background: rgba(37, 99, 235, 0.08) !important;
-  border: 1px solid rgba(37, 99, 235, 0.3) !important;
+  color: #0F172A !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
 }
 
 #ff-font-finder-card .ff-btn-css:hover {
-  background: rgba(37, 99, 235, 0.15) !important;
+  background: #E2E8F0 !important;
 }
 
 #ff-font-finder-card .ff-btn-close {
@@ -398,30 +399,31 @@
 }
 
 #ff-font-finder-card .ff-gf-verified {
-  color: #ffffff !important;
+  color: #0F172A !important;
   background: var(--ff-accent) !important;
   border: 1px solid var(--ff-accent) !important;
 }
 
 #ff-font-finder-card .ff-gf-verified:hover {
+  color: #0F172A !important;
   background: var(--ff-accent-dark) !important;
   border-color: var(--ff-accent-dark) !important;
 }
 
 #ff-font-finder-card .ff-gf-search {
-  color: var(--ff-accent) !important;
-  background: rgba(37, 99, 235, 0.08) !important;
-  border: 1px solid rgba(37, 99, 235, 0.3) !important;
+  color: #0F172A !important;
+  background: #F8FAFC !important;
+  border: 1px solid #E2E8F0 !important;
 }
 
 #ff-font-finder-card .ff-gf-search:hover {
-  background: rgba(37, 99, 235, 0.15) !important;
+  background: #E2E8F0 !important;
 }
 
 #ff-font-finder-card .ff-gf-btn:focus-visible,
 #ff-font-finder-card .ff-btn:focus-visible,
 #ff-font-finder-card .ff-close-x:focus-visible {
-  outline: 2px solid var(--ff-accent) !important;
+  outline: 2px solid #0F172A !important;
   outline-offset: 2px !important;
 }
 
@@ -445,10 +447,10 @@
   padding: 8px 12px !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   line-height: 1.35 !important;
-  background: #ffffff !important;
-  border: 1px solid #e8edf5 !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
   border-radius: 10px !important;
-  box-shadow: 0 8px 24px rgba(15, 30, 61, 0.18), 0 1px 4px rgba(15, 30, 61, 0.08) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18), 0 1px 4px rgba(15, 23, 42, 0.08) !important;
   pointer-events: none !important;
   user-select: none !important;
   overflow: hidden !important;
@@ -459,7 +461,7 @@
   display: block !important;
   font-size: 15px !important;
   font-weight: 800 !important;
-  color: #0f1e3d !important;
+  color: #0F172A !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -470,7 +472,7 @@
   margin-top: 1px !important;
   font-size: 12px !important;
   font-weight: 600 !important;
-  color: #64748b !important;
+  color: #64748B !important;
   white-space: nowrap !important;
 }
 
@@ -492,11 +494,11 @@
   font-size: 13px !important;
   font-weight: 600 !important;
   line-height: 1.4 !important;
-  color: #ffffff !important;
-  background: #0f1e3d !important;
+  color: #FFFFFF !important;
+  background: #0F172A !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   border-radius: 999px !important;
-  box-shadow: 0 8px 24px rgba(15, 30, 61, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.35) !important;
   pointer-events: none !important;
   user-select: none !important;
   white-space: nowrap !important;
@@ -504,7 +506,7 @@
 }
 
 #ff-font-finder-toast.ff-toast-error {
-  background: #b91c1c !important;
+  background: #DC2626 !important;
 }
 
 /* ---------- Animations (subtle) ---------- */
