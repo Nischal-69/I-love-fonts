@@ -1560,7 +1560,7 @@
       return {
         label: '✓ Loaded',
         valueClass: 'ff-value-loaded',
-        dot: '#16A34A',
+        dot: '#15803D',
         sub: 'Declared font verified on this page'
       };
     }

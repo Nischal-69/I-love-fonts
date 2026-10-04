@@ -156,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = document.createElement('p');
     name.className = 'last-font-name';
     name.textContent = primary;
+    name.title = primary;
     lastFont.appendChild(name);
 
     const details = [];
@@ -169,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const meta = document.createElement('p');
       meta.className = 'last-font-meta';
       meta.textContent = details.join(' · ');
+      meta.title = meta.textContent;
       lastFont.appendChild(meta);
     }
 
@@ -184,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const sub = document.createElement('p');
       sub.className = 'last-font-meta';
       sub.textContent = context.join(' · ');
+      sub.title = sub.textContent;
       lastFont.appendChild(sub);
     }
 
@@ -229,18 +232,28 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.type = 'button';
       btn.className = 'history-item' + (index === selectedIndex ? ' selected' : '');
       btn.setAttribute('aria-label', `Show ${(entry.primaryFamily || entry.family || 'font')} details`);
+      if (index === selectedIndex) {
+        btn.setAttribute('aria-current', 'true');
+      }
 
       const name = document.createElement('span');
       name.className = 'history-name';
       name.textContent = entry.primaryFamily || entry.family || entry.fontFamily || 'Unknown font';
+      name.title = name.textContent;
 
       const site = document.createElement('span');
       site.className = 'history-site';
       site.textContent = entry.hostname || 'Unknown site';
+      site.title = site.textContent;
 
       const weight = document.createElement('span');
       weight.className = 'history-weight';
-      weight.textContent = entry.fontWeight || '';
+      if (entry.fontWeight) {
+        weight.textContent = entry.fontWeight;
+        weight.title = entry.fontWeight;
+      } else {
+        weight.style.display = 'none';
+      }
 
       btn.appendChild(name);
       btn.appendChild(site);
@@ -293,8 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  function setStatus(text) {
+  function setStatus(text, isError) {
     statusMessage.textContent = text;
+    statusMessage.classList.toggle('status-error', Boolean(isError));
   }
 
   // Ensure content.js is present, then message it.
@@ -332,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (!tab || tab.id === undefined) {
         // Keep the popup open so this error stays visible.
-        setStatus('No active tab found.');
+        setStatus('No active tab found.', true);
         return;
       }
 
@@ -350,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       // Restricted pages (chrome://, edge://, Chrome Web Store) block
       // content scripts by design. Keep the popup open to show this.
-      setStatus('Cannot activate here (restricted page). Try a regular website.');
+      setStatus('Cannot activate here (restricted page). Try a regular website.', true);
     } finally {
       activateBtn.disabled = false;
     }
